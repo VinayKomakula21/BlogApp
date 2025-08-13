@@ -43,7 +43,7 @@ const Navbar = () => {
               onClick={() => (window.location.href = "/")}
               className="text-white text-lg font-bold cursor-pointer"
             >
-              BlogApp
+              BlogSphere
             </div>
             <div className="flex items-center space-x-4">
               <a href="/create" className="text-gray-300 hover:text-white">
