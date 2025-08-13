@@ -1,6 +1,6 @@
-# Blog Application
+# BlogSphere - Full-Stack Blog Application
 
-A full-stack blog application built with Spring Boot, React, Tailwind CSS, and MySQL. This application allows users to create, read, update, and delete blog posts with user authentication and social features like comments and likes.
+A modern, full-stack blog application built with Spring Boot, React, and Tailwind CSS. This application provides a complete blogging platform with user authentication, blog management, social features like comments and likes, and a responsive modern UI.
 
 ## 🚀 Features
 
@@ -8,33 +8,36 @@ A full-stack blog application built with Spring Boot, React, Tailwind CSS, and M
 - **User Authentication**: Secure registration and login system with password hashing
 - **Blog Management**: Create, read, update, and delete blog posts
 - **User Profiles**: User information with avatars and profile details
-- **Social Features**: Like posts and add comments
+- **Social Features**: Like/unlike posts and add/delete comments
 - **Responsive Design**: Modern UI built with Tailwind CSS
+- **Real-time Interactions**: Dynamic like/unlike and comment functionality
 
 ### Technical Features
-- **RESTful API**: Complete REST API with proper HTTP methods
+- **RESTful API**: Complete REST API with proper HTTP methods and validation
 - **Database Integration**: MySQL database with JPA/Hibernate ORM
 - **Security**: Password encryption using Spring Security Crypto
-- **Modern Frontend**: React with Vite for fast development
-- **Real-time Updates**: Dynamic content loading and updates
+- **Modern Frontend**: React 19 with Vite for fast development
+- **State Management**: Local state management with React hooks
+- **API Integration**: Comprehensive API layer for all backend operations
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Spring Boot 3.5.3**: Main framework
-- **Spring Data JPA**: Database operations
-- **Spring Security Crypto**: Password encryption
-- **MySQL**: Database
+- **Spring Boot 3.5.3**: Main framework with Spring Boot Starter
+- **Spring Data JPA**: Database operations and ORM
+- **Spring Security Crypto**: Password encryption and security
+- **Spring Validation**: Input validation and data integrity
+- **MySQL**: Database with MySQL 8 dialect
 - **Lombok**: Reduces boilerplate code
-- **Maven**: Build tool
+- **Maven**: Build tool and dependency management
 - **Java 21**: Programming language
 
 ### Frontend
-- **React 19.1.0**: UI framework
-- **React Router DOM**: Client-side routing
-- **Tailwind CSS 4.1.11**: Utility-first CSS framework
-- **Vite**: Build tool and development server
-- **ESLint**: Code linting
+- **React 19.1.0**: Latest React version with modern features
+- **React Router DOM 7.7.1**: Client-side routing
+- **Tailwind CSS 4.1.11**: Latest utility-first CSS framework
+- **Vite 7.0.4**: Modern build tool and development server
+- **ESLint 9.30.1**: Code linting and quality
 
 ## 📁 Project Structure
 
@@ -42,19 +45,20 @@ A full-stack blog application built with Spring Boot, React, Tailwind CSS, and M
 BlogApp/
 ├── BlogApplication/          # Spring Boot Backend
 │   ├── src/main/java/com/blogpost/app/
-│   │   ├── api/             # REST Controllers
-│   │   ├── entity/          # JPA Entities
-│   │   ├── pojo/            # Data Transfer Objects
+│   │   ├── api/             # REST Controllers (UserApi, PostApi, CommentApi, LikeApi)
+│   │   ├── entity/          # JPA Entities (User, Post, Comment, Like)
+│   │   ├── pojo/            # Data Transfer Objects (Auth, Login, Register)
+│   │   ├── dto/             # Request/Response DTOs
 │   │   ├── repository/      # Data Access Layer
-│   │   ├── service/         # Business Logic
-│   │   └── utils/           # Utility Classes
+│   │   ├── service/         # Business Logic Layer
+│   │   └── utils/           # Utility Classes (PasswordHasher)
 │   └── src/main/resources/
 │       └── application.properties
 └── BlogApplication-UI/       # React Frontend
     ├── src/
-    │   ├── api/             # API Integration
-    │   ├── components/      # Reusable Components
-    │   ├── pages/           # Page Components
+    │   ├── api/             # API Integration (postsApi, usersApi, likesApi, commentsApi)
+    │   ├── components/      # Reusable Components (Blogcard, Comments, Likes, Layout, Navbar)
+    │   ├── pages/           # Page Components (Home, BlogDetail, CreateBlog, Login, Register)
     │   └── assets/          # Static Assets
     └── package.json
 ```
@@ -62,17 +66,17 @@ BlogApp/
 ## 🗄️ Database Schema
 
 ### Entities
-- **User**: User accounts with authentication
-- **Post**: Blog posts with content and metadata
-- **Comment**: User comments on posts
-- **Like**: User likes on posts
+- **User**: User accounts with authentication (id, userName, password, firstName, lastName, avatarUrl, timestamps)
+- **Post**: Blog posts with content and metadata (id, postTitle, postContent, image, user, timestamps)
+- **Comment**: User comments on posts (id, content, user, post, createdAt)
+- **Like**: User likes on posts (id, user, post, createdAt with unique constraint)
 
 ### Relationships
 - User → Posts (One-to-Many)
 - User → Comments (One-to-Many)
 - User → Likes (One-to-Many)
-- Post → Comments (Many-to-Many)
-- Post → Likes (Many-to-Many)
+- Post → Comments (One-to-Many)
+- Post → Likes (One-to-Many)
 
 ## 🚀 Getting Started
 
@@ -102,7 +106,7 @@ BlogApp/
    ```bash
    mvn spring-boot:run
    ```
-   The backend will start on `http://localhost:8080`
+   The backend will start on `http://localhost:8080` with context path `/api`
 
 ### Frontend Setup
 
@@ -129,34 +133,57 @@ BlogApp/
 - `POST /api/Auth/login` - User login
 
 ### Posts
-- `GET /api/Posts` - Get all posts
-- `GET /api/Posts/{id}` - Get post by ID
-- `GET /api/Posts/user/{id}` - Get posts by user ID
+- `GET /api/Posts` - Get all posts (with optional username context)
+- `GET /api/Posts/{id}` - Get post by ID (with optional username context)
+- `GET /api/Posts/user/{id}` - Get posts by user ID (with optional username context)
 - `POST /api/Posts/create` - Create new post
-- `PUT /api/Posts/{id}` - Update post
+- `PUT /api/Posts/{id}` - Update post (with optional username context)
 - `DELETE /api/Posts/{id}` - Delete post
 
-## 🎨 Frontend Pages
+### Likes
+- `POST /api/Posts/{postId}/like` - Toggle like/unlike on a post
+- `GET /api/Posts/{postId}/likes` - Get likes for a post
+- `POST /api/Likes/post/{postId}/toggle` - Alternative like toggle endpoint
+- `GET /api/Likes/post/{postId}` - Alternative likes retrieval endpoint
 
-- **Home** (`/`): Display all blog posts
-- **Login** (`/login`): User authentication
-- **Register** (`/register`): User registration
-- **Create Blog** (`/create`): Create new blog post
-- **Blog Detail** (`/blog/:id`): View individual blog post
+### Comments
+- `POST /api/Posts/{postId}/comments` - Add comment to a post
+- `GET /api/Posts/{postId}/comments` - Get comments for a post
+- `POST /api/Comments/post/{postId}` - Alternative comment creation endpoint
+- `GET /api/Comments/post/{postId}` - Alternative comment retrieval endpoint
+- `DELETE /api/Comments/{commentId}` - Delete comment (requires username parameter)
+
+## 🎨 Frontend Pages & Components
+
+### Pages
+- **Home** (`/`): Display all blog posts with modern card layout
+- **Login** (`/login`): User authentication with form validation
+- **Register** (`/register`): User registration with comprehensive form
+- **Create Blog** (`/create`): Create new blog post with image upload support
+- **Blog Detail** (`/blog/:id`): View individual blog post with comments and likes
+
+### Components
+- **Blogcard**: Modern card component for displaying blog post previews
+- **Comments**: Interactive comment system with add/delete functionality
+- **Likes**: Like/unlike functionality with real-time updates
+- **Layout**: Main layout wrapper with navigation
+- **Navbar**: Responsive navigation with user authentication status
 
 ## 🔧 Configuration
 
 ### Backend Configuration
-The application uses the following default configuration:
+The application uses the following configuration:
 - **Server Port**: 8080
 - **Context Path**: `/api`
-- **Database**: MySQL on localhost:3306
-- **JPA**: Auto-update schema
+- **Database**: MySQL on localhost:3306 with database name `blog`
+- **JPA**: Auto-update schema with MySQL 8 dialect
+- **Password**: Default password set to "Password" (change in production)
 
 ### Frontend Configuration
 - **Development Server**: 5173
-- **API Proxy**: Configured to proxy `/api` requests to backend
+- **API Base URL**: `/api` (proxied to backend)
 - **Build Tool**: Vite with React plugin
+- **CSS Framework**: Tailwind CSS 4.1.11
 
 ## 🚀 Deployment
 
@@ -177,35 +204,14 @@ The application uses the following default configuration:
    ```
 2. Serve the `dist` folder with your preferred web server
 
-## 🤝 Contributing
+## 🔐 Security Features
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- **Password Hashing**: Secure password storage using Spring Security Crypto
+- **Input Validation**: Comprehensive validation using Spring Validation
+- **SQL Injection Protection**: JPA/Hibernate ORM with parameterized queries
+- **Authentication**: Session-based authentication with localStorage
 
 
 ## 👨‍💻 Author
 
 Created with ❤️ using Spring Boot and React.
-
-## 🐛 Known Issues
-
-- Currently no image upload functionality for blog posts
-- No email verification for user registration
-- No password reset functionality
-- In dev progress
-
-## 🔮 Future Enhancements
-
-- [ ] Image upload for blog posts
-- [ ] Email verification
-- [ ] Password reset functionality
-- [ ] User profile editing
-- [ ] Search functionality
-- [ ] Categories and tags for posts
-- [ ] Rich text editor for blog content
-- [ ] Social media sharing
-- [ ] Admin panel
-- [ ] API documentation with Swagger 
