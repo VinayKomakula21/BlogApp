@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import Blogcard from '../components/Blogcard';
 import { postsApi } from '../api/postsApi';
 
@@ -27,7 +28,6 @@ const Home = () => {
         }));
         
         setPosts(transformedPosts);
-        console.log('Fetched posts:', transformedPosts);
       } catch (error) {
         console.error('Error fetching posts:', error);
         setError(error.message);
@@ -40,6 +40,17 @@ const Home = () => {
   }, []);
 
   const username = localStorage.getItem('username');
+
+  const [query, setQuery] = useState('');
+  const filteredPosts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      p.content.toLowerCase().includes(q) ||
+      p.author.toLowerCase().includes(q)
+    );
+  }, [query, posts]);
 
   if (loading) {
     return (
@@ -97,17 +108,26 @@ const Home = () => {
         </p>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex justify-center mb-8">
-        <a
-          href="/create"
-          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md"
+      {/* Quick Actions + Search */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-8">
+        <Link
+          to="/create"
+          className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-md"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
           </svg>
           Write New Post
-        </a>
+        </Link>
+        <div className="flex-1">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search posts..."
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
       </div>
 
       {/* Posts Section */}
@@ -116,7 +136,7 @@ const Home = () => {
           <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
           </svg>
-          Latest Posts ({posts.length})
+          Latest Posts ({filteredPosts.length})
         </h2>
 
         {posts.length === 0 ? (
@@ -135,7 +155,7 @@ const Home = () => {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
-            {posts.map(post => (
+            {filteredPosts.map(post => (
               <Blogcard 
                 key={post.id}
                 post={post}

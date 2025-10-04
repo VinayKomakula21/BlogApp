@@ -13,21 +13,29 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
+import com.blogpost.app.annotation.PublicEndpoint;
+import com.blogpost.app.annotation.RequiresAuth;
+import com.blogpost.app.annotation.RequiresRole;
 import com.blogpost.app.dto.CommentRequest;
 import com.blogpost.app.dto.CommentResponse;
 import com.blogpost.app.dto.LikeRequest;
 import com.blogpost.app.dto.LikeResponse;
 import com.blogpost.app.dto.PostResponse;
 import com.blogpost.app.entity.Post;
+import com.blogpost.app.entity.UserRole;
+import com.blogpost.app.security.UserContext;
 import com.blogpost.app.service.CommentService;
 import com.blogpost.app.service.LikeService;
 import com.blogpost.app.service.PostService;
+import com.blogpost.app.service.UserService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/Posts")
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class PostApi {
     
     @Autowired
@@ -38,19 +46,31 @@ public class PostApi {
     
     @Autowired
     private CommentService commentService;
-    
+
+    @Autowired
+    private UserContext userContext;
+
+    @Autowired
+    private UserService userService;
+
     @PostMapping("/create")
+    @RequiresAuth
     public ResponseEntity<PostResponse> createPost(@RequestBody Post post) {
         if (post == null) {
             return ResponseEntity.badRequest().build();
         }
-        
+
+        // Set the current user as the post author
+        Long currentUserId = userContext.getCurrentUserId();
+        post.setUser(userService.getUserById(currentUserId));
+
         Post created = postService.createPost(post);
-        PostResponse response = postService.mapToPostResponse(created, null);
+        PostResponse response = postService.mapToPostResponse(created, userContext.getCurrentUsername());
         return ResponseEntity.ok(response);
     }
     
     @GetMapping("/{id}")
+    @PublicEndpoint
     public ResponseEntity<PostResponse> getPostById(
             @PathVariable Long id,
             @RequestParam(required = false) String username) {
@@ -65,6 +85,7 @@ public class PostApi {
     }
     
     @GetMapping
+    @PublicEndpoint
     public ResponseEntity<List<PostResponse>> getAllPosts(
             @RequestParam(required = false) String username) {
         List<PostResponse> posts = postService.getAllPostsWithUserContext(username);
@@ -72,6 +93,7 @@ public class PostApi {
     }
     
     @GetMapping("/user/{id}")
+    @PublicEndpoint
     public ResponseEntity<List<PostResponse>> getAllPostsByUserId(
             @PathVariable Long id,
             @RequestParam(required = false) String username) {
@@ -80,6 +102,7 @@ public class PostApi {
     }
     
     @PutMapping("/{id}")
+    @RequiresAuth
     public ResponseEntity<PostResponse> updatePost(
             @PathVariable Long id, 
             @RequestBody Post updatedPost,
@@ -95,13 +118,15 @@ public class PostApi {
     }
     
     @DeleteMapping("/{id}")
+    @RequiresAuth
     public ResponseEntity<String> deletePostById(@PathVariable Long id) {
         postService.deletePostById(id);
         return ResponseEntity.ok("Post deleted successfully.");
     }
     
-    // Like 
+    // Like
     @PostMapping("/{postId}/like")
+    @RequiresAuth
     public ResponseEntity<LikeResponse> toggleLike(
             @PathVariable Long postId,
             @Valid @RequestBody LikeRequest likeRequest) {
@@ -114,6 +139,7 @@ public class PostApi {
     }
     
     @GetMapping("/{postId}/likes")
+    @PublicEndpoint
     public ResponseEntity<LikeResponse> getLikes(@PathVariable Long postId) {
         try {
             LikeResponse response = likeService.getLikesForPost(postId);
@@ -123,8 +149,9 @@ public class PostApi {
         }
     }
     
-    // Comment 
+    // Comment
     @PostMapping("/{postId}/comments")
+    @RequiresAuth
     public ResponseEntity<CommentResponse> addComment(
             @PathVariable Long postId,
             @Valid @RequestBody CommentRequest commentRequest) {
@@ -137,6 +164,7 @@ public class PostApi {
     }
     
     @GetMapping("/{postId}/comments")
+    @PublicEndpoint
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long postId) {
         try {
             List<CommentResponse> comments = commentService.getCommentsByPostId(postId);

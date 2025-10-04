@@ -31,8 +31,7 @@ public class PostService {
     private CommentService commentService;
     
     public Post createPost(Post post) {
-        User user = userRepository.findById(post.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.getByUserName(post.getUser().getUserName());
         
         Post postUp = Post.builder()
                 .postTitle(post.getPostTitle())

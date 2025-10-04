@@ -16,7 +16,7 @@ export const commentsApi = {
   // Add a comment to a post
   addComment: async (postId, commentData) => {
     try {
-      const username = localStorage.getItem('username');
+      const userName = localStorage.getItem('username');
       const response = await fetch(`/api/Posts/${postId}/comments`, {
         method: 'POST',
         headers: {
@@ -24,13 +24,14 @@ export const commentsApi = {
         },
         body: JSON.stringify({
           ...commentData,
-          username
+          userName
         }),
       });
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      return await response.json();
+      const text = await response.text();
+      return text ? JSON.parse(text) : { success: true };
     } catch (error) {
       console.error('Failed to add comment:', error);
       throw error;
@@ -49,7 +50,8 @@ export const commentsApi = {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      return await response.json();
+      const text = await response.text();
+      return text ? JSON.parse(text) : { success: true };
     } catch (error) {
       console.error('Failed to delete comment:', error);
       throw error;

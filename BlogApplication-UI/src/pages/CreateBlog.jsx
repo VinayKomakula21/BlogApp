@@ -1,18 +1,51 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { postsApi } from '../api/postsApi'
 
 const CreateBlog = () => {
 
+  const navigate = useNavigate()
   const [data, setData] = useState({
     title: '',
     content: '',
     image: null,
   });
+  const [submitting, setSubmitting] = useState(false)
 
   return (
     <div className="max-w-3xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">Create a New Blog Post</h1>
-      <form className="space-y-4">
+      <form
+        className="space-y-4"
+        onSubmit={async (e) => {
+          e.preventDefault()
+          if (submitting) return
+          setSubmitting(true)
+          try {
+            const userName = localStorage.getItem('username') || ''
+            const payload = {
+              postTitle: data.title,
+              postContent: data.content,
+              image: data.image,
+              user: {
+                userName: userName,
+              }
+            }
+            const res = await postsApi.createPost(payload)
+            if (res?.id) {
+              navigate(`/blog/${res.id}`)
+            } else {
+              navigate('/')
+            }
+          } catch (err) {
+            alert('Failed to create post')
+            // eslint-disable-next-line no-console
+            console.error(err)
+          } finally {
+            setSubmitting(false)
+          }
+        }}
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700">Title</label>
           <input
@@ -47,10 +80,10 @@ const CreateBlog = () => {
 
         <button
           type="submit"
-          onClick={() => postsApi.createPost(data)}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={!data.title.trim() || !data.content.trim() || submitting}
+          className="w-full bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          Create Blog Post
+          {submitting ? 'Creating...' : 'Create Blog Post'}
         </button>
       </form>
     </div>

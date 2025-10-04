@@ -1,15 +1,17 @@
-import { useNavigate } from "react-router-dom";
-import { usersApi } from "../api/usersApi";
-import { useState } from "react";
-import { useRef } from "react";
-import { useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useState, useRef, useEffect } from "react";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, error, setError } = useAuth();
   const [loginUser, setLoginUser] = useState({
     userName: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
+  const from = location.state?.from?.pathname || "/";
 
   // User avatar dropdown state
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -30,19 +32,16 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting credentials:", loginUser);
+    setLoading(true);
+    setError(null);
+
     try {
-      const res = await usersApi.login(loginUser);
-      console.log("API response:", res);
-      if (res.authenticated) {
-        localStorage.setItem("username", loginUser.userName);
-        navigate("/");
-      } else {
-        alert("Login failed. Please check your credentials.");
-      }
-    } catch (error) {
-      alert("Login request failed. See console for details.");
-      console.error("Login error:", error);
+      await login(loginUser);
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,12 +63,9 @@ const Login = () => {
         <nav className="bg-gray-800 p-4">
           <div className="container mx-auto">
             <div className="flex justify-between items-center">
-              <div
-                onClick={() => (window.location.href = "/")}
-                className="text-white text-lg font-bold cursor-pointer"
-              >
-                BlogApp
-              </div>
+              <button onClick={() => navigate('/')} className="text-white text-lg font-bold cursor-pointer">
+                BlogSphere
+              </button>
               <div className="space-x-4"></div>
             </div>
           </div>
@@ -81,14 +77,13 @@ const Login = () => {
         <div className="relative" ref={avatarRef}>
           <button
             onClick={() => setDropdownOpen((open) => !open)}
-            className="focus:outline-none"
+            className="focus:outline-none w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
             aria-label="User menu"
           >
-            <img
-              src="src/assets/userlogo.png"
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full"
-            />
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21a8 8 0 10-16 0" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-50 py-2">
@@ -109,6 +104,11 @@ const Login = () => {
         </div>
       </div>
       <h1 className="text-2xl font-bold text-center mt-10">Login Page</h1>
+      {error && (
+        <div className="max-w-md mx-auto mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
       <form className="max-w-md mx-auto mt-6" onSubmit={handleSubmit}>
         {/* username */}
         <div className="mb-4">
@@ -156,16 +156,17 @@ const Login = () => {
         <div className="flex justify-between">
           <button
             type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            disabled={loading}
+            className={`${loading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'} text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
-          <a
-            href="/register"
+          <Link
+            to="/register"
             className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
           >
             Register
-          </a>
+          </Link>
         </div>
       </form>
     </>

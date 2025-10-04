@@ -6,6 +6,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,12 +37,25 @@ public class User {
 	private String lastName;
 	@Column
 	private String avatarUrl;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "role", nullable = false)
+	@Builder.Default
+	private UserRole role = UserRole.USER;
+
+	@Column(name = "refresh_token", columnDefinition = "TEXT")
+	private String refreshToken;
+
+	@Column(name = "token_version")
+	@Builder.Default
+	private Integer tokenVersion = 0;
+
 	@Column(updatable = false)
 	@CreationTimestamp
 	private Long createdAt;
 	@Column
 	@UpdateTimestamp
     private Long updatedAt;
-	
-	
+
+
 }

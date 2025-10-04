@@ -1,11 +1,12 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Likes from "../components/Likes";
 import Comments from "../components/Comments";
 
 const BlogDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -172,8 +173,8 @@ const BlogDetail = () => {
 
       {/* Back to Home Button */}
       <div className="text-center">
-        <button
-          onClick={() => window.location.href = '/'}
+          <button 
+            onClick={() => navigate('/')}
           className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

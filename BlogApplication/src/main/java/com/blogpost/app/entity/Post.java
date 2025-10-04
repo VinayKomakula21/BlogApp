@@ -41,7 +41,7 @@ public class Post {
     @Column(name = "post_content", nullable = false, columnDefinition = "TEXT")
     private String postContent;
     
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String image;
     
     @ManyToOne(fetch = FetchType.EAGER)

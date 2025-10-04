@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { usersApi } from "../api/usersApi";
-import { useEffect } from "react";
-import { useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register, error, setError } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [registerUser, setRegisterUser] = useState({
     userName: "",
     firstName: "",
@@ -47,12 +47,9 @@ const Register = () => {
       <nav className="bg-gray-800 p-4">
         <div className="container mx-auto">
           <div className="flex justify-between items-center">
-            <div
-              onClick={() => (window.location.href = "/")}
-              className="text-white text-lg font-bold cursor-pointer"
-            >
-              BlogApp
-            </div>
+            <button onClick={() => navigate('/')} className="text-white text-lg font-bold cursor-pointer">
+              BlogSphere
+            </button>
           </div>
         </div>
       </nav>
@@ -62,14 +59,13 @@ const Register = () => {
         <div className="relative" ref={avatarRef}>
           <button
             onClick={() => setDropdownOpen((open) => !open)}
-            className="focus:outline-none"
+            className="focus:outline-none w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
             aria-label="User menu"
           >
-            <img
-              src="src/assets/userlogo.png"
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full"
-            />
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21a8 8 0 10-16 0" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-50 py-2">
@@ -91,7 +87,24 @@ const Register = () => {
       </div>
 
       <h1 className="text-2xl font-bold text-center mt-10">Register Page</h1>
-      <form className="max-w-md mx-auto mt-6">
+      {error && (
+        <div className="max-w-md mx-auto mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+      <form className="max-w-md mx-auto mt-6" onSubmit={async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        try {
+          await register(registerUser);
+          navigate("/");
+        } catch (err) {
+          console.error("Registration error:", err);
+        } finally {
+          setLoading(false);
+        }
+      }}>
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
@@ -172,21 +185,17 @@ const Register = () => {
         <div className="flex items-center justify-between">
           <button
             type="submit"
-            onClick={async (event) => {
-              event.preventDefault();
-              const res = await usersApi.register(registerUser);
-              console.log("Res: ", res);
-            }}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            disabled={loading}
+            className={`${loading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-700'} text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`}
           >
-            Register
+            {loading ? 'Registering...' : 'Register'}
           </button>
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
           >
             Login
-          </a>
+          </Link>
         </div>
         <p className="text-center text-gray-500 text-xs mt-4">
           &copy; 2023 BlogApp. All rights reserved.
