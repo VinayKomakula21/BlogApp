@@ -1,5 +1,6 @@
 package com.blogpost.app.entity;
 
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -11,6 +12,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +24,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_username", columnList = "userName")
+})
 public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,12 +54,13 @@ public class User {
 	@Builder.Default
 	private Integer tokenVersion = 0;
 
-	@Column(updatable = false)
+	@Column(name = "created_at", updatable = false)
 	@CreationTimestamp
-	private Long createdAt;
-	@Column
+	private LocalDateTime createdAt;
+
+	@Column(name = "updated_at")
 	@UpdateTimestamp
-    private Long updatedAt;
+	private LocalDateTime updatedAt;
 
 
 }

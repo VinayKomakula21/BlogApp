@@ -33,11 +33,8 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
-        User user = userService.getUserByUserName(loginRequest.getUserName());
-
-        if (user == null) {
-            throw new RuntimeException("Invalid username or password");
-        }
+        User user = userService.findUserByUserName(loginRequest.getUserName())
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         if (!PasswordHasher.verify(loginRequest.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid username or password");
@@ -67,8 +64,7 @@ public class AuthService {
     @Transactional
     public LoginResponse register(RegisterRequest registerRequest) {
         // Check if username already exists
-        User existingUser = userService.getUserByUserName(registerRequest.getUserName());
-        if (existingUser != null) {
+        if (userService.findUserByUserName(registerRequest.getUserName()).isPresent()) {
             throw new RuntimeException("Username already exists");
         }
 
@@ -79,10 +75,8 @@ public class AuthService {
                 .password(PasswordHasher.hash(registerRequest.getPassword()))
                 .userName(registerRequest.getUserName())
                 .avatarUrl(registerRequest.getAvatarUrl())
-                .role(UserRole.USER) // Default role
+                .role(UserRole.USER)
                 .tokenVersion(0)
-                .createdAt(System.currentTimeMillis())
-                .updatedAt(System.currentTimeMillis())
                 .build();
 
         User savedUser = userService.createUser(user);
@@ -120,11 +114,8 @@ public class AuthService {
 
         // Extract username from refresh token
         String username = jwtUtils.extractUsername(refreshToken);
-        User user = userService.getUserByUserName(username);
-
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
+        User user = userService.findUserByUserName(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Refresh tokens
         Map<String, String> tokens = tokenService.refreshTokens(refreshToken, user);

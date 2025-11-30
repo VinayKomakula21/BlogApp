@@ -5,10 +5,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.blogpost.app.dto.PostResponse;
+import com.blogpost.app.dto.TagResponse;
 import com.blogpost.app.entity.Post;
 import com.blogpost.app.entity.User;
 import com.blogpost.app.repository.PostRepository;
@@ -59,21 +64,58 @@ public class PostService {
                 .map(post -> mapToPostResponse(post, username))
                 .collect(Collectors.toList());
     }
-    
+
+    public Page<PostResponse> getAllPostsPaginated(int page, int size, String username) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+        return posts.map(post -> mapToPostResponse(post, username));
+    }
+
     public List<Post> getPostsByUserId(Long id) {
         return postRepository.getByUserId(id);
     }
-    
+
     public List<PostResponse> getPostsByUserIdWithContext(Long userId, String username) {
         List<Post> posts = postRepository.getByUserId(userId);
         return posts.stream()
                 .map(post -> mapToPostResponse(post, username))
                 .collect(Collectors.toList());
     }
+
+    public Page<PostResponse> getPostsByUserIdPaginated(Long userId, int page, int size, String username) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        return posts.map(post -> mapToPostResponse(post, username));
+    }
+
+    public Page<PostResponse> searchPosts(String query, int page, int size, String username) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.searchPosts(query, pageable);
+        return posts.map(post -> mapToPostResponse(post, username));
+    }
+
+    public Page<PostResponse> getPostsByTag(String tagSlug, int page, int size, String username) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> posts = postRepository.findByTagSlug(tagSlug, pageable);
+        return posts.map(post -> mapToPostResponse(post, username));
+    }
     
     public boolean deletePostById(Long id) {
         postRepository.deleteById(id);
         return true;
+    }
+
+    public boolean isOwner(Long postId, Long userId) {
+        if (postId == null || userId == null) {
+            return false;
+        }
+        Post post = postRepository.findById(postId).orElse(null);
+        return post != null && post.getUser() != null && userId.equals(post.getUser().getId());
+    }
+
+    public Long getPostOwnerId(Long postId) {
+        Post post = postRepository.findById(postId).orElse(null);
+        return post != null && post.getUser() != null ? post.getUser().getId() : null;
     }
     
     public Post updatePost(Long id, Post updatedPost) {
@@ -100,11 +142,21 @@ public class PostService {
     
     public PostResponse mapToPostResponse(Post post, String currentUsername) {
         boolean isLiked = false;
-        
+
         if (currentUsername != null) {
             isLiked = likeService.isPostLikedByUser(post.getId(), currentUsername);
         }
-        
+
+        List<TagResponse> tagResponses = post.getTags() != null ?
+                post.getTags().stream()
+                        .map(tag -> TagResponse.builder()
+                                .id(tag.getId())
+                                .name(tag.getName())
+                                .slug(tag.getSlug())
+                                .build())
+                        .collect(Collectors.toList()) :
+                List.of();
+
         return PostResponse.builder()
                 .id(post.getId())
                 .postTitle(post.getPostTitle())
@@ -113,6 +165,7 @@ public class PostService {
                 .likesCount(post.getLikesCount())
                 .commentsCount(post.getCommentsCount())
                 .isLiked(isLiked)
+                .tags(tagResponses)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .user(PostResponse.UserResponse.builder()

@@ -6,16 +6,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class JwtConfig {
 
-    @Value("${jwt.secret:ThisIsAVeryLongSecretKeyForJWTTokenGenerationAndValidation2024}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.access.expiration:900000}") // 15 minutes in milliseconds
+    @Value("${jwt.access.expiration}")
     private Long accessTokenExpiration;
 
-    @Value("${jwt.refresh.expiration:604800000}") // 7 days in milliseconds
+    @Value("${jwt.refresh.expiration}")
     private Long refreshTokenExpiration;
 
-    @Value("${jwt.issuer:BlogApplication}")
+    @Value("${jwt.issuer}")
     private String issuer;
 
     public String getJwtSecret() {

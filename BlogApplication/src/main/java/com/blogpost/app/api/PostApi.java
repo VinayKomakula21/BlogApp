@@ -3,6 +3,7 @@ package com.blogpost.app.api;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,18 +14,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.CrossOrigin;
-
 import com.blogpost.app.annotation.PublicEndpoint;
 import com.blogpost.app.annotation.RequiresAuth;
-import com.blogpost.app.annotation.RequiresRole;
 import com.blogpost.app.dto.CommentRequest;
 import com.blogpost.app.dto.CommentResponse;
+import com.blogpost.app.dto.ErrorResponse;
 import com.blogpost.app.dto.LikeRequest;
 import com.blogpost.app.dto.LikeResponse;
 import com.blogpost.app.dto.PostResponse;
 import com.blogpost.app.entity.Post;
-import com.blogpost.app.entity.UserRole;
 import com.blogpost.app.security.UserContext;
 import com.blogpost.app.service.CommentService;
 import com.blogpost.app.service.LikeService;
@@ -35,7 +33,6 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/Posts")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class PostApi {
     
     @Autowired
@@ -86,40 +83,88 @@ public class PostApi {
     
     @GetMapping
     @PublicEndpoint
-    public ResponseEntity<List<PostResponse>> getAllPosts(
-            @RequestParam(required = false) String username) {
-        List<PostResponse> posts = postService.getAllPostsWithUserContext(username);
+    public ResponseEntity<Page<PostResponse>> getAllPosts(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String tag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<PostResponse> posts;
+        if (tag != null && !tag.trim().isEmpty()) {
+            posts = postService.getPostsByTag(tag.trim(), page, size, username);
+        } else {
+            posts = postService.getAllPostsPaginated(page, size, username);
+        }
         return ResponseEntity.ok(posts);
     }
-    
+
+    @GetMapping("/search")
+    @PublicEndpoint
+    public ResponseEntity<Page<PostResponse>> searchPosts(
+            @RequestParam String q,
+            @RequestParam(required = false) String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        if (q == null || q.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        Page<PostResponse> posts = postService.searchPosts(q.trim(), page, size, username);
+        return ResponseEntity.ok(posts);
+    }
+
     @GetMapping("/user/{id}")
     @PublicEndpoint
-    public ResponseEntity<List<PostResponse>> getAllPostsByUserId(
+    public ResponseEntity<Page<PostResponse>> getAllPostsByUserId(
             @PathVariable Long id,
-            @RequestParam(required = false) String username) {
-        List<PostResponse> posts = postService.getPostsByUserIdWithContext(id, username);
+            @RequestParam(required = false) String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<PostResponse> posts = postService.getPostsByUserIdPaginated(id, page, size, username);
         return ResponseEntity.ok(posts);
     }
     
     @PutMapping("/{id}")
     @RequiresAuth
-    public ResponseEntity<PostResponse> updatePost(
-            @PathVariable Long id, 
+    public ResponseEntity<?> updatePost(
+            @PathVariable Long id,
             @RequestBody Post updatedPost,
             @RequestParam(required = false) String username) {
-        Post post = postService.updatePost(id, updatedPost);
-        
-        if (post == null) {
-            return ResponseEntity.badRequest().body(null);
+
+        Long currentUserId = userContext.getCurrentUserId();
+        boolean isAdmin = userContext.isAdmin();
+
+        if (!postService.isOwner(id, currentUserId) && !isAdmin) {
+            return ResponseEntity.status(403)
+                    .body(new ErrorResponse("Forbidden", "You are not authorized to update this post", 403));
         }
-        
+
+        Post post = postService.updatePost(id, updatedPost);
+
+        if (post == null) {
+            return ResponseEntity.status(404)
+                    .body(new ErrorResponse("Not Found", "Post not found", 404));
+        }
+
         PostResponse response = postService.mapToPostResponse(post, username);
         return ResponseEntity.ok(response);
     }
-    
+
     @DeleteMapping("/{id}")
     @RequiresAuth
-    public ResponseEntity<String> deletePostById(@PathVariable Long id) {
+    public ResponseEntity<?> deletePostById(@PathVariable Long id) {
+        Long currentUserId = userContext.getCurrentUserId();
+        boolean isAdmin = userContext.isAdmin();
+
+        if (!postService.isOwner(id, currentUserId) && !isAdmin) {
+            return ResponseEntity.status(403)
+                    .body(new ErrorResponse("Forbidden", "You are not authorized to delete this post", 403));
+        }
+
+        Post post = postService.getPostById(id);
+        if (post == null) {
+            return ResponseEntity.status(404)
+                    .body(new ErrorResponse("Not Found", "Post not found", 404));
+        }
+
         postService.deletePostById(id);
         return ResponseEntity.ok("Post deleted successfully.");
     }

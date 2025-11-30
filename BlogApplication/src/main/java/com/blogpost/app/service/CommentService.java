@@ -58,15 +58,18 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
     
-    public boolean deleteComment(Long commentId, String username) {
+    public boolean deleteComment(Long commentId, Long userId, boolean isAdmin) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
-        
-        // Check if the user owns the comment
-        if (!comment.getUser().getUserName().equals(username)) {
-            throw new RuntimeException("You can only delete your own comments");
+
+        boolean isCommentAuthor = comment.getUser().getId().equals(userId);
+        boolean isPostOwner = comment.getPost().getUser().getId().equals(userId);
+
+        // Allow deletion if user is: comment author, post owner, or admin
+        if (!isCommentAuthor && !isPostOwner && !isAdmin) {
+            throw new SecurityException("Not authorized to delete this comment");
         }
-        
+
         commentRepository.delete(comment);
         return true;
     }

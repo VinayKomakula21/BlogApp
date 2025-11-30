@@ -26,6 +26,9 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
     List<String> findUsernamesByPostId(@Param("postId") Long postId);
     
     void deleteByPostId(Long postId);
-    
+
     boolean existsByPostIdAndUserId(Long postId, Long userId);
+
+    @Query("SELECT COUNT(l) FROM Like l WHERE l.user.id = :userId")
+    Long countByUserId(@Param("userId") Long userId);
 }

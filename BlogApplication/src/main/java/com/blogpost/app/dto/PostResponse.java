@@ -1,6 +1,7 @@
 package com.blogpost.app.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class PostResponse {
     private int likesCount;
     private int commentsCount;
     private boolean isLiked;
+    private List<TagResponse> tags;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     

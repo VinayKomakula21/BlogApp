@@ -12,6 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -19,16 +20,24 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = {"post", "user"})
 @Entity
-@Table(name = "likes", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "post_id"})
-})
+@Table(name = "likes",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "post_id"})
+    },
+    indexes = {
+        @Index(name = "idx_like_post_id", columnList = "post_id"),
+        @Index(name = "idx_like_user_id", columnList = "user_id")
+    }
+)
 public class Like {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

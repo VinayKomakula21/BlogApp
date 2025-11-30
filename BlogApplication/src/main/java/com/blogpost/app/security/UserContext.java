@@ -46,8 +46,4 @@ public class UserContext {
     public boolean isAdmin() {
         return hasRole("ADMIN");
     }
-
-    public boolean isModerator() {
-        return hasRole("MODERATOR");
-    }
 }
